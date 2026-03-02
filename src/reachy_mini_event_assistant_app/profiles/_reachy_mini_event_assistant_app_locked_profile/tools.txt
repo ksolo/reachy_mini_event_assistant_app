@@ -9,6 +9,6 @@ stop_dance
 sweep_look
 head_tracking
 
-# Event assistant
-answer_event_question
-checkin_guest
+# Event assistant (module names, not tool names)
+event_qa
+checkin

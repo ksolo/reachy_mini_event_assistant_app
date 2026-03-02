@@ -100,6 +100,43 @@ def run(
 
     camera_worker, _, vision_manager = handle_vision_stuff(args, robot)
 
+    # --- Event assistant: RAG + check-in setup ---
+    from reachy_mini_event_assistant_app.config import config
+    from reachy_mini_event_assistant_app.rag.store import VectorStore
+    from reachy_mini_event_assistant_app.rag.embeddings import Embeddings
+    from reachy_mini_event_assistant_app.rag.sync import ContentSyncWorker
+    from reachy_mini_event_assistant_app.checkin.luma import LumaProvider
+
+    store = VectorStore(path=config.QDRANT_PATH)
+    embeddings = Embeddings(api_key=config.OPENAI_API_KEY or "")
+
+    if config.EVENT_PROVIDER == "luma":
+        event_provider = LumaProvider(
+            auth_token=config.LUMA_AUTH_TOKEN,
+            event_name=config.EVENT_NAME,
+        )
+    else:
+        logger.warning("Unknown EVENT_PROVIDER '%s' — check-in will be unavailable", config.EVENT_PROVIDER)
+        event_provider = None
+
+    if config.CONTENT_REPO_URL:
+        sync_worker = ContentSyncWorker(
+            repo_url=config.CONTENT_REPO_URL,
+            store=store,
+            embeddings=embeddings,
+            state_path=config.INGEST_STATE_PATH,
+            branch=config.CONTENT_REPO_BRANCH,
+        )
+        sync_worker.start()
+        if store.is_empty():
+            logger.info("First run: waiting for initial content sync to complete...")
+            sync_worker.ready.wait()
+            if sync_worker.error:
+                logger.warning("Content sync failed: %s", sync_worker.error)
+    else:
+        logger.warning("CONTENT_REPO_URL not set — RAG question answering will be unavailable")
+    # --- end event assistant setup ---
+
     movement_manager = MovementManager(
         current_robot=robot,
         camera_worker=camera_worker,
@@ -113,6 +150,9 @@ def run(
         camera_worker=camera_worker,
         vision_manager=vision_manager,
         head_wobbler=head_wobbler,
+        vector_store=store,
+        embeddings=embeddings,
+        event_provider=event_provider,
     )
     current_file_path = os.path.dirname(os.path.abspath(__file__))
     logger.debug(f"Current file absolute path: {current_file_path}")
