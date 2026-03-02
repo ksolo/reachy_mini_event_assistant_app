@@ -113,6 +113,17 @@ class Config:
     LOCAL_VISION_MODEL = os.getenv("LOCAL_VISION_MODEL", "HuggingFaceTB/SmolVLM2-2.2B-Instruct")
     HF_TOKEN = os.getenv("HF_TOKEN")  # Optional, falls back to hf auth login if not set
 
+    # Event assistant — RAG content sync
+    CONTENT_REPO_URL = os.getenv("CONTENT_REPO_URL", "")
+    CONTENT_REPO_BRANCH = os.getenv("CONTENT_REPO_BRANCH", "main")
+    QDRANT_PATH = os.getenv("QDRANT_PATH", "./data/qdrant")
+    INGEST_STATE_PATH = os.getenv("INGEST_STATE_PATH", "./data/ingest_state.json")
+
+    # Event assistant — check-in provider
+    EVENT_PROVIDER = os.getenv("EVENT_PROVIDER", "luma")  # luma | (future: eventbrite)
+    EVENT_NAME = os.getenv("EVENT_NAME", "the event")
+    LUMA_AUTH_TOKEN = os.getenv("LUMA_AUTH_TOKEN", "")
+
     logger.debug(f"Model: {MODEL_NAME}, HF_HOME: {HF_HOME}, Vision Model: {LOCAL_VISION_MODEL}")
 
     _profiles_directory_env = os.getenv("REACHY_MINI_EXTERNAL_PROFILES_DIRECTORY")

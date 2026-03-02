@@ -58,6 +58,10 @@ class ToolDependencies:
     vision_manager: Any | None = None
     head_wobbler: Any | None = None  # HeadWobbler for audio-reactive motion
     motion_duration_s: float = 1.0
+    # Event assistant deps
+    vector_store: Any | None = None   # rag.store.VectorStore
+    embeddings: Any | None = None     # rag.embeddings.Embeddings
+    event_provider: Any | None = None  # checkin.base.EventProvider
 
 
 # Tool base class

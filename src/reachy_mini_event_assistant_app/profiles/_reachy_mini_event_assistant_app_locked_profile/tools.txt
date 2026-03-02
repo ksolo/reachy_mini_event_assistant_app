@@ -1,18 +1,14 @@
-# Available tools for this profile, remove comments to activate them
-# or use 'all' to enable all built-in tools
+# Tools available to the event assistant profile
 
-dance
-stop_dance
+# Movement
+move_head
 play_emotion
 stop_emotion
-#camera
-#do_nothing
-#head_tracking
-#move_head
-
-# You can also add custom tools defined in this profile folder
-# see custom_tool.py for an example
-
-# Uncomment the following line to enable the custom tool template:
-#custom_tool
+dance
+stop_dance
 sweep_look
+head_tracking
+
+# Event assistant
+answer_event_question
+checkin_guest
