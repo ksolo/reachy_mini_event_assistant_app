@@ -22,29 +22,49 @@
 - Projects directory: `~/Projects/reachy/`
   - This app: `reachy_mini_event_assistant_app/` (has its own .venv)
   - Reference app: `reachy_mini_conversation_app/`
+- Content repo: `~/Projects/reachy/agentic-engineering-chicago/`
 - App published at: https://huggingface.co/spaces/ksolo/reachy_mini_event_assistant_app
 
-## Current State (last updated 2026-03-01)
-All core modules built. See plan.md for full architecture.
+## Current State (last updated 2026-03-03)
+All core modules built and verified. App is feature-complete for the March 24 event.
 
-**Next task — wire everything into main.py:**
-- Instantiate VectorStore, Embeddings, LumaProvider at boot
-- Start ContentSyncWorker background thread (block if first run / collection empty)
-- Inject vector_store, embeddings, event_provider into ToolDependencies
-- Wire PersonDetector to trigger greeting state
+**All wiring complete:**
+- VectorStore, Embeddings, ContentSyncWorker, LumaProvider all boot correctly
+- PersonDetector wired into main.py and greeting signal wired into OpenaiRealtimeHandler
+- RAG sync tested clean (template.md excluded, all 6 test queries pass)
+- Luma check-in API tested and verified against live event (200 response, guest name extracted)
+- data/ added to .gitignore (runtime-generated, recreated automatically on boot)
 
-**Known issues / notes:**
+**Tunable constants (adjust after testing on physical robot):**
+- `camera/person_detect.py`: `MOTION_AREA_THRESHOLD = 3000` (px on 320×240 frame)
+- `camera/person_detect.py`: `DETECTION_COOLDOWN_S = 30.0` (seconds)
+- `camera/person_detect.py`: `QUIET_FRAMES_TO_RESET = 30` (~3s of no motion resets cooldown)
+
+## Before the Real Event
+- SSH into robot, clone repo, copy `.env.example` → `.env`
+- Fill in `OPENAI_API_KEY` and `LUMA_SESSION_KEY` (capture fresh from browser devtools day-of)
+- Run `scripts/setup_raspberry_pi.sh` to install libzbar0
+- If Luma deploys between now and event day, recapture `LUMA_CLIENT_VERSION` from devtools
+
+## Known Issues / Notes
 - qdrant-client pinned to 1.12.1 (1.17.0 has grpc EnumTypeWrapper bug on Python 3.11)
 - pyzbar gracefully disabled on macOS (libzbar path issue); works fine on Pi
 - On macOS, set `DYLD_LIBRARY_PATH=/opt/homebrew/lib` if QR scanning needed locally
+- MuJoCo simulator on macOS requires `libpython3.11.dylib` — needs asdf Python rebuilt
+  with `PYTHON_CONFIGURE_OPTS="--enable-shared"`. Skip simulator testing on macOS for now.
+- LUMA_SESSION_KEY will expire — recapture from browser devtools close to event day
+- LUMA_CLIENT_VERSION is a Luma frontend git hash — update in .env if check-in breaks
 
-## Still Needed Before a Real Test Run
-- Content GitHub repo: https://github.com/ksolo/agentic-engineering-chicago ✓
-- Luma internal endpoint: capture via browser devtools Network tab while scanning QR
-- .env file: copy .env.example → .env, fill in OPENAI_API_KEY, LUMA_AUTH_TOKEN, EVENT_NAME
+## Luma Check-in Details
+- Endpoint: `POST https://api2.luma.com/event/admin/update-check-in`
+- Auth: cookie `luma.auth-session-key` (stored as LUMA_SESSION_KEY in .env)
+- QR format: `https://luma.com/check-in/{event_api_id}?pk={rsvp_api_id}`
+- Response: `data["guest"]["first_name"]` for greeting name
+- Undocumented internal API — fragile by nature
 
 ## Key Notes
 - SDK docs: `~/reachy_mini_resources/reachy_mini/docs/source/`
 - SDK examples: `~/reachy_mini_resources/reachy_mini/examples/`
 - REST API docs (when daemon running): `http://reachy-mini.local:8000/docs`
 - Pi setup script: `scripts/setup_raspberry_pi.sh` (installs libzbar0 + uv)
+- RAG test script: `scripts/test_rag.py` (run after content changes to verify retrieval)
