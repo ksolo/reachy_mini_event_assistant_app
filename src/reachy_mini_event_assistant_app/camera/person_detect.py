@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 # Tunable thresholds — will need adjustment on physical hardware
 MOTION_AREA_THRESHOLD = 3000   # minimum contour area in pixels to count as motion
 FACE_CONFIDENCE_THRESHOLD = 0.7
-DETECTION_COOLDOWN_S = 5.0     # seconds before re-triggering after a detection
+DETECTION_COOLDOWN_S = 30.0    # seconds before re-triggering after a detection
+QUIET_FRAMES_TO_RESET = 30     # consecutive quiet frames (~3s at 10fps) before cooldown resets
 
 
 class PersonDetector(threading.Thread):
@@ -40,6 +41,7 @@ class PersonDetector(threading.Thread):
             history=100, varThreshold=40, detectShadows=False
         )
         self._last_trigger_time: float = 0.0
+        self._quiet_frame_count: int = 0
 
     def stop(self) -> None:
         self._stop_event.set()
@@ -49,12 +51,20 @@ class PersonDetector(threading.Thread):
         while not self._stop_event.is_set():
             frame = self._camera_worker.get_latest_frame()  # type: ignore[attr-defined]
             if frame is not None:
-                if self._motion_detected(frame):
+                motion = self._motion_detected(frame)
+                if motion:
+                    self._quiet_frame_count = 0
                     now = time.monotonic()
                     if now - self._last_trigger_time > DETECTION_COOLDOWN_S:
                         logger.info("Person detected — triggering greeting")
                         self._last_trigger_time = now
                         self.person_detected.set()
+                else:
+                    self._quiet_frame_count += 1
+                    if self._quiet_frame_count >= QUIET_FRAMES_TO_RESET and self._last_trigger_time > 0:
+                        logger.info("Scene quiet — resetting cooldown for next person")
+                        self._last_trigger_time = 0.0
+                        self._quiet_frame_count = 0
             time.sleep(0.1)
 
     def _motion_detected(self, frame: NDArray[np.uint8]) -> bool:
