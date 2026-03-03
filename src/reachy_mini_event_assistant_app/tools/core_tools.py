@@ -62,6 +62,7 @@ class ToolDependencies:
     vector_store: Any | None = None   # rag.store.VectorStore
     embeddings: Any | None = None     # rag.embeddings.Embeddings
     event_provider: Any | None = None  # checkin.base.EventProvider
+    person_detected: Any | None = None  # threading.Event from PersonDetector
 
 
 # Tool base class

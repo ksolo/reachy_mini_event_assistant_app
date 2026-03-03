@@ -137,6 +137,8 @@ def run(
         logger.warning("CONTENT_REPO_URL not set — RAG question answering will be unavailable")
     # --- end event assistant setup ---
 
+    person_detected = threading.Event()
+
     movement_manager = MovementManager(
         current_robot=robot,
         camera_worker=camera_worker,
@@ -153,6 +155,7 @@ def run(
         vector_store=store,
         embeddings=embeddings,
         event_provider=event_provider,
+        person_detected=person_detected,
     )
     current_file_path = os.path.dirname(os.path.abspath(__file__))
     logger.debug(f"Current file absolute path: {current_file_path}")
@@ -221,6 +224,13 @@ def run(
     if vision_manager:
         vision_manager.start()
 
+    person_detector: "PersonDetector | None" = None
+    if camera_worker and not args.no_camera:
+        from reachy_mini_event_assistant_app.camera.person_detect import PersonDetector
+        person_detector = PersonDetector(camera_worker=camera_worker, person_detected=person_detected)
+        person_detector.start()
+        logger.info("PersonDetector started")
+
     def poll_stop_event() -> None:
         """Poll the stop event to allow graceful shutdown."""
         if app_stop_event is not None:
@@ -242,6 +252,8 @@ def run(
     finally:
         movement_manager.stop()
         head_wobbler.stop()
+        if person_detector:
+            person_detector.stop()
         if camera_worker:
             camera_worker.stop()
         if vision_manager:

@@ -550,6 +550,14 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
         # sends to the stream the stuff put in the output queue by the openai event handler
         # This is called periodically by the fastrtc Stream
 
+        # Handle person detection (set by PersonDetector thread via threading.Event)
+        if self.deps.person_detected is not None and self.deps.person_detected.is_set():
+            self.deps.person_detected.clear()
+            try:
+                await self.send_greeting_signal()
+            except Exception as e:
+                logger.warning("Greeting signal skipped (connection closed?): %s", e)
+
         # Handle idle
         idle_duration = asyncio.get_event_loop().time() - self.last_activity_time
         if idle_duration > 15.0 and self.deps.movement_manager.is_idle():
@@ -664,6 +672,22 @@ class OpenaiRealtimeHandler(AsyncStreamHandler):
             return voices
         except Exception:
             return fallback
+
+    async def send_greeting_signal(self) -> None:
+        """Inject a greeting prompt when a person is detected approaching."""
+        logger.info("Person detected — sending greeting signal")
+        if not self.connection:
+            logger.debug("No connection, cannot send greeting signal")
+            return
+        self.last_activity_time = asyncio.get_event_loop().time()
+        await self.connection.conversation.item.create(
+            item={
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": "[A person has approached. Greet them warmly and let them know you can answer questions about the event or help them check in.]"}],
+            },
+        )
+        await self.connection.response.create()
 
     async def send_idle_signal(self, idle_duration: float) -> None:
         """Send an idle signal to the openai server."""
