@@ -36,12 +36,13 @@ _LUMA_CHECK_IN_BASE_URL = "https://luma.com/check-in"
 
 
 class LumaProvider(EventProvider):
-    def __init__(self, session_key: str, client_version: str) -> None:
+    def __init__(self, session_key: str, client_version: str, event_name: str = "the event") -> None:
         self._session_key = session_key
         self._client_version = client_version
+        self._event_name = event_name
 
     def get_event_name(self) -> str:
-        return "the event"
+        return self._event_name
 
     def checkin_guest(self, qr_data: str) -> CheckinResult:
         event_api_id, rsvp_api_id = self._parse_qr(qr_data)
