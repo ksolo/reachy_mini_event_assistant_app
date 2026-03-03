@@ -60,7 +60,7 @@ class LumaProvider(EventProvider):
             return CheckinResult(
                 success=True,
                 guest_name=guest_name,
-                message=f"You're checked in{name_str}! Welcome to {self._event_name}!",
+                message=f"You're checked in {name_str}! Enjoy the event!",
             )
         except requests.HTTPError as e:
             logger.warning("Luma check-in HTTP error: %s", e)

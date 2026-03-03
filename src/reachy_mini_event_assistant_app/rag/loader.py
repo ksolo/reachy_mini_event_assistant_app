@@ -35,7 +35,9 @@ def get_file_tree(owner: str, repo: str, branch: str = "main") -> dict[str, str]
     return {
         item["path"]: item["sha"]
         for item in tree
-        if item["type"] == "blob" and item["path"].endswith(".md")
+        if item["type"] == "blob"
+        and item["path"].endswith(".md")
+        and not item["path"].split("/")[-1].startswith(("_", "template"))
     }
 
 

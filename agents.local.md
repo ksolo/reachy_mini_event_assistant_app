@@ -39,7 +39,7 @@ All core modules built. See plan.md for full architecture.
 - On macOS, set `DYLD_LIBRARY_PATH=/opt/homebrew/lib` if QR scanning needed locally
 
 ## Still Needed Before a Real Test Run
-- Content GitHub repo: create it, set CONTENT_REPO_URL in .env
+- Content GitHub repo: https://github.com/ksolo/agentic-engineering-chicago ✓
 - Luma internal endpoint: capture via browser devtools Network tab while scanning QR
 - .env file: copy .env.example → .env, fill in OPENAI_API_KEY, LUMA_AUTH_TOKEN, EVENT_NAME
 
