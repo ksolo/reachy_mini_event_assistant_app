@@ -48,6 +48,9 @@ tmp/
 *.log
 cache/
 
+# Runtime-generated data (Qdrant store + ingest state)
+data/
+
 # macOS
 .DS_Store
 
