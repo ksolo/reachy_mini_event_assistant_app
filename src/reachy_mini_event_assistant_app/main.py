@@ -112,8 +112,8 @@ def run(
 
     if config.EVENT_PROVIDER == "luma":
         event_provider = LumaProvider(
-            auth_token=config.LUMA_AUTH_TOKEN,
-            event_name=config.EVENT_NAME,
+            session_key=config.LUMA_SESSION_KEY,
+            client_version=config.LUMA_CLIENT_VERSION,
         )
     else:
         logger.warning("Unknown EVENT_PROVIDER '%s' — check-in will be unavailable", config.EVENT_PROVIDER)

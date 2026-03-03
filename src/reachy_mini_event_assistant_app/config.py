@@ -122,7 +122,9 @@ class Config:
     # Event assistant — check-in provider
     EVENT_PROVIDER = os.getenv("EVENT_PROVIDER", "luma")  # luma | (future: eventbrite)
     EVENT_NAME = os.getenv("EVENT_NAME", "the event")
-    LUMA_AUTH_TOKEN = os.getenv("LUMA_AUTH_TOKEN", "")
+    LUMA_SESSION_KEY = os.getenv("LUMA_SESSION_KEY", "")
+    # Luma frontend deploy hash — update if check-in stops working after a Luma deploy
+    LUMA_CLIENT_VERSION = os.getenv("LUMA_CLIENT_VERSION", "cf825565f986a8aa6e037d0ab12f2d4d7144b79a")
 
     logger.debug(f"Model: {MODEL_NAME}, HF_HOME: {HF_HOME}, Vision Model: {LOCAL_VISION_MODEL}")
 
