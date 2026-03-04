@@ -27,6 +27,7 @@ from urllib.parse import parse_qs, urlparse
 import requests
 
 from reachy_mini_event_assistant_app.checkin.base import CheckinResult, EventProvider
+from reachy_mini_event_assistant_app.config import config
 
 
 logger = logging.getLogger(__name__)
@@ -42,9 +43,12 @@ class LumaProvider(EventProvider):
         self._event_name = event_name
 
     def get_event_name(self) -> str:
-        return self._event_name
+        return config.EVENT_NAME or self._event_name
 
     def checkin_guest(self, qr_data: str) -> CheckinResult:
+        session_key = config.LUMA_SESSION_KEY or self._session_key
+        client_version = config.LUMA_CLIENT_VERSION or self._client_version
+
         event_api_id, rsvp_api_id = self._parse_qr(qr_data)
         if not event_api_id or not rsvp_api_id:
             return CheckinResult(
@@ -67,10 +71,10 @@ class LumaProvider(EventProvider):
                     "accept": "*/*",
                     "content-type": "application/json",
                     "x-luma-client-type": "luma-web",
-                    "x-luma-client-version": self._client_version,
+                    "x-luma-client-version": client_version,
                     "x-luma-web-url": f"{_LUMA_CHECK_IN_BASE_URL}/{event_api_id}",
                 },
-                cookies={"luma.auth-session-key": self._session_key},
+                cookies={"luma.auth-session-key": session_key},
                 timeout=10,
             )
             resp.raise_for_status()

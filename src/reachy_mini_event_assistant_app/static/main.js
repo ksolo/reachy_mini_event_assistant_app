@@ -133,4 +133,63 @@ async function init() {
   });
 }
 
-window.addEventListener("DOMContentLoaded", init);
+async function loadEventConfig() {
+  const eventPanel = document.getElementById("event-config-panel");
+  try {
+    const resp = await fetchWithTimeout("/event_config", {}, 3000);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const set = (id, val) => { if (val) document.getElementById(id).value = val; };
+    set("content-repo-url", data.content_repo_url);
+    set("event-provider", data.event_provider);
+    set("event-name", data.event_name);
+    set("luma-client-version", data.luma_client_version);
+    const keyInput = document.getElementById("luma-session-key");
+    keyInput.placeholder = data.has_luma_session_key
+      ? "Leave blank to keep current key"
+      : "Paste fresh key from browser devtools";
+  } catch (e) {}
+  show(eventPanel, true);
+}
+
+async function saveEventConfig() {
+  const statusEl = document.getElementById("event-status");
+  statusEl.textContent = "Saving…";
+  statusEl.className = "status";
+
+  const body = {
+    content_repo_url: document.getElementById("content-repo-url").value.trim(),
+    event_provider: document.getElementById("event-provider").value.trim(),
+    event_name: document.getElementById("event-name").value.trim(),
+    luma_client_version: document.getElementById("luma-client-version").value.trim(),
+  };
+  const lumaKey = document.getElementById("luma-session-key").value.trim();
+  if (lumaKey) body.luma_session_key = lumaKey;
+
+  try {
+    const resp = await fetch("/event_config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      statusEl.textContent = data.error || "Save failed. Please try again.";
+      statusEl.className = "status error";
+      return;
+    }
+    statusEl.textContent = "Settings saved.";
+    statusEl.className = "status ok";
+    document.getElementById("luma-session-key").value = "";
+    await loadEventConfig();
+  } catch (e) {
+    statusEl.textContent = "Save failed. Please try again.";
+    statusEl.className = "status error";
+  }
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+  await init();
+  await loadEventConfig();
+  document.getElementById("event-save-btn").addEventListener("click", saveEventConfig);
+});

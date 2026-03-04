@@ -22,7 +22,6 @@ dependencies = [
  "eclipse-zenoh~=1.7.0",
  "gradio_client>=1.13.3",
  "qdrant-client==1.12.1",
- "pyzbar>=0.1.9",
  "requests>=2.32.5",
 ]
 [[project.authors]]

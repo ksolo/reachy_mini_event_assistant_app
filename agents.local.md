@@ -41,15 +41,13 @@ All core modules built and verified. App is feature-complete for the March 24 ev
 - `camera/person_detect.py`: `QUIET_FRAMES_TO_RESET = 30` (~3s of no motion resets cooldown)
 
 ## Before the Real Event
-- SSH into robot, clone repo, copy `.env.example` → `.env`
+- SSH into robot, clone repo, run `uv sync`, copy `.env.example` → `.env`
 - Fill in `OPENAI_API_KEY` and `LUMA_SESSION_KEY` (capture fresh from browser devtools day-of)
-- Run `scripts/setup_raspberry_pi.sh` to install libzbar0
 - If Luma deploys between now and event day, recapture `LUMA_CLIENT_VERSION` from devtools
+- QR scanning uses OpenCV's built-in detector — no extra system libraries needed
 
 ## Known Issues / Notes
 - qdrant-client pinned to 1.12.1 (1.17.0 has grpc EnumTypeWrapper bug on Python 3.11)
-- pyzbar gracefully disabled on macOS (libzbar path issue); works fine on Pi
-- On macOS, set `DYLD_LIBRARY_PATH=/opt/homebrew/lib` if QR scanning needed locally
 - MuJoCo simulator on macOS requires `libpython3.11.dylib` — needs asdf Python rebuilt
   with `PYTHON_CONFIGURE_OPTS="--enable-shared"`. Skip simulator testing on macOS for now.
 - LUMA_SESSION_KEY will expire — recapture from browser devtools close to event day
@@ -66,5 +64,4 @@ All core modules built and verified. App is feature-complete for the March 24 ev
 - SDK docs: `~/reachy_mini_resources/reachy_mini/docs/source/`
 - SDK examples: `~/reachy_mini_resources/reachy_mini/examples/`
 - REST API docs (when daemon running): `http://reachy-mini.local:8000/docs`
-- Pi setup script: `scripts/setup_raspberry_pi.sh` (installs libzbar0 + uv)
 - RAG test script: `scripts/test_rag.py` (run after content changes to verify retrieval)

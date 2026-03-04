@@ -25,6 +25,7 @@ from reachy_mini.media.media_manager import MediaBackend
 from reachy_mini_event_assistant_app.config import LOCKED_PROFILE, config
 from reachy_mini_event_assistant_app.openai_realtime import OpenaiRealtimeHandler
 from reachy_mini_event_assistant_app.headless_personality_ui import mount_personality_routes
+from reachy_mini_event_assistant_app.headless_event_config_ui import mount_event_config_routes
 
 
 try:
@@ -387,6 +388,10 @@ class LocalStream:
                         lambda: self._asyncio_loop,
                         persist_personality=self._persist_personality,
                         get_persisted_personality=self._read_persisted_personality,
+                    )
+                    mount_event_config_routes(
+                        self._settings_app,
+                        instance_path=self._instance_path,
                     )
             except Exception:
                 pass

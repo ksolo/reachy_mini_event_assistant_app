@@ -234,3 +234,134 @@ Set via: `ssh reachy@reachy-mini.local`, then edit `.env` in the app directory.
 2. **Content repo URL** — What is the GitHub repo URL for event content?
 3. **Event content for dev/testing** — Create placeholder markdown files to test
    RAG before the real content repo is ready.
+
+---
+
+## Feature: Event Config Web UI
+
+### Goal
+
+Extend the existing headless settings page (`static/`) so that operators can
+configure event-specific variables via the browser without SSH access.
+Frequent updates to `LUMA_SESSION_KEY` (expires or changes after Luma deploys)
+are the primary use case.
+
+### Variables to expose
+
+| Variable | Type | Notes |
+|---|---|---|
+| `CONTENT_REPO_URL` | text | GitHub URL for the RAG content repo |
+| `EVENT_PROVIDER` | text | `luma` or future providers |
+| `EVENT_NAME` | text | Human-readable event name spoken by robot |
+| `LUMA_SESSION_KEY` | password | Browser session cookie — expires often |
+| `LUMA_CLIENT_VERSION` | text | Luma frontend git hash |
+
+### Architectural constraint: keep `console.py` easy to update
+
+`console.py` comes from the upstream conversation app template. All new logic
+lives in a new standalone module (`headless_event_config_ui.py`) following
+the exact pattern of `headless_personality_ui.py`. The only touch to
+`console.py` is **one additional function call** alongside the existing
+`mount_personality_routes(...)` call.
+
+### New file: `headless_event_config_ui.py`
+
+Mirrors `headless_personality_ui.py` in structure:
+
+```python
+def mount_event_config_routes(
+    app: FastAPI,
+    *,
+    instance_path: str | None,
+) -> None:
+    """Register event config endpoints on a FastAPI app."""
+    ...
+```
+
+Contains all endpoint logic and its own `.env` read/write helpers (not
+dependent on `LocalStream`'s private methods).
+
+**`GET /event_config`**
+- Returns current values from `config`; masks `LUMA_SESSION_KEY` to
+  `has_luma_session_key: bool`.
+  ```json
+  {
+    "content_repo_url": "...",
+    "event_provider": "luma",
+    "event_name": "the event",
+    "has_luma_session_key": true,
+    "luma_client_version": "cf825..."
+  }
+  ```
+
+**`POST /event_config`**
+- Accepts any subset of the 5 keys (omit `luma_session_key` to keep the
+  stored value).
+- Persists to `<instance_path>/.env` (replace-or-append per key).
+- Updates live `config` attributes immediately (no restart needed).
+- Returns `{"ok": true}`.
+
+### `console.py` change (one line)
+
+Inside `runner()`, alongside `mount_personality_routes(...)`:
+
+```python
+from reachy_mini_event_assistant_app.headless_event_config_ui import mount_event_config_routes
+mount_event_config_routes(self._settings_app, instance_path=self._instance_path)
+```
+
+### `checkin/luma.py` change — live credential refresh
+
+`LumaProvider` currently captures credentials at `__init__` into
+`self._session_key`, `self._client_version`, and `self._event_name`. A web
+UI update to `config` won't reach the running instance without this fix.
+
+Make `checkin_guest()` and `get_event_name()` read from `config` at call
+time, falling back to the init-time values if config is empty:
+
+```python
+def checkin_guest(self, qr_data):
+    session_key = config.LUMA_SESSION_KEY or self._session_key
+    client_version = config.LUMA_CLIENT_VERSION or self._client_version
+    ...
+```
+
+This is a small change to app-owned code — not the upstream template.
+
+### Frontend changes — `static/`
+
+**`index.html`**
+- Update subtitle from "conversation app" → "event assistant app".
+- Add `<div id="event-config-panel" class="panel">` below the OpenAI panel.
+- Fields:
+  - `CONTENT_REPO_URL` — `<input type="text">`
+  - `EVENT_PROVIDER` — `<input type="text">`
+  - `EVENT_NAME` — `<input type="text">`
+  - `LUMA_SESSION_KEY` — `<input type="password">` with placeholder
+    "Leave blank to keep current key" when one is already stored
+  - `LUMA_CLIENT_VERSION` — `<input type="text">`
+- Save button + `<p class="status">` element.
+
+**`main.js`**
+- On load: fetch `GET /event_config`, populate all fields.
+  - `LUMA_SESSION_KEY`: never pre-fill the value; set placeholder based on
+    `has_luma_session_key`.
+- Save: `POST /event_config` with all fields.
+  - Omit `luma_session_key` from the payload if the field is empty (preserves
+    whatever is currently stored).
+- Show success/error using existing `.status` CSS classes.
+
+### What does NOT change
+
+- `style.css` — existing styles cover all needed elements. No new CSS needed.
+- `config.py` — vars already defined; we only mutate the live instance.
+- All existing OpenAI key + personality routes in `console.py` — untouched.
+
+### Implementation order
+
+1. `checkin/luma.py` — read from `config` at call time for session key,
+   client version, and event name.
+2. `headless_event_config_ui.py` — new module with `mount_event_config_routes`.
+3. `console.py` — add one import + one call in `runner()`.
+4. `static/index.html` — fix subtitle, add event config panel.
+5. `static/main.js` — add `loadEventConfig()` / `saveEventConfig()`.

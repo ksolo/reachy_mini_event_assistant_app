@@ -16,7 +16,7 @@
       <header class="hero">
         <div class="pill">Headless control</div>
         <h1>Reachy Mini Event Assistant App</h1>
-        <p class="subtitle">Configure your OpenAI API key for the conversation app.</p>
+        <p class="subtitle">Configure your event assistant app settings.</p>
       </header>
 
       <div id="configured" class="panel hidden">
@@ -48,6 +48,36 @@
         </div>
       </div>
     </div>
+
+      <div id="event-config-panel" class="panel hidden">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Event Configuration</p>
+            <h2>Event Settings</h2>
+          </div>
+        </div>
+        <p class="muted">Configure the event details and Luma check-in credentials. The Luma session key expires often — paste a fresh one here whenever check-in stops working.</p>
+
+        <label for="content-repo-url">Content Repo URL</label>
+        <input id="content-repo-url" type="text" placeholder="https://github.com/you/your-event-content" autocomplete="off" />
+
+        <label for="event-provider">Event Provider</label>
+        <input id="event-provider" type="text" placeholder="luma" autocomplete="off" />
+
+        <label for="event-name">Event Name</label>
+        <input id="event-name" type="text" placeholder="the event" autocomplete="off" />
+
+        <label for="luma-session-key">Luma Session Key</label>
+        <input id="luma-session-key" type="password" placeholder="Paste fresh key from browser devtools" autocomplete="off" />
+
+        <label for="luma-client-version">Luma Client Version</label>
+        <input id="luma-client-version" type="text" placeholder="cf825565f986a8aa6e037d0ab12f2d4d7144b79a" autocomplete="off" />
+
+        <div class="actions">
+          <button id="event-save-btn">Save settings</button>
+          <p id="event-status" class="status"></p>
+        </div>
+      </div>
 
     <script src="/static/main.js"></script>
   </body>
