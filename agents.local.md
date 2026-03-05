@@ -47,7 +47,8 @@ All core modules built and verified. App is feature-complete for the March 24 ev
 - QR scanning uses OpenCV's built-in detector — no extra system libraries needed
 
 ## Known Issues / Notes
-- qdrant-client pinned to 1.12.1 (1.17.0 has grpc EnumTypeWrapper bug on Python 3.11)
+- qdrant-client pinned to >=1.9.0,<1.17.0 (1.17.0 has grpc EnumTypeWrapper bug on Python 3.11; resolved to 1.16.2)
+- 1.12.1 had grpcio-tools as a hard dep which failed to build on Python 3.13 build env (no cp313 wheel); 1.16.2 makes grpcio optional, so grpcio-tools is no longer installed
 - MuJoCo simulator on macOS requires `libpython3.11.dylib` — needs asdf Python rebuilt
   with `PYTHON_CONFIGURE_OPTS="--enable-shared"`. Skip simulator testing on macOS for now.
 - LUMA_SESSION_KEY will expire — recapture from browser devtools close to event day
