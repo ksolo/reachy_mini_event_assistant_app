@@ -52,6 +52,24 @@ def run(
     logger = setup_logger(args.debug)
     logger.info("Starting Reachy Mini Conversation App")
 
+    # Load instance .env early so config values (OPENAI_API_KEY, CONTENT_REPO_URL, etc.)
+    # are available before the RAG pipeline and other components are initialised.
+    # console.py's runner() will load it again later, which is harmless.
+    if instance_path:
+        from pathlib import Path
+        from dotenv import load_dotenv
+        from reachy_mini_event_assistant_app.config import config
+        env_path = Path(instance_path) / ".env"
+        if env_path.exists():
+            load_dotenv(dotenv_path=str(env_path), override=True)
+            import os as _os
+            for _key in ("OPENAI_API_KEY", "CONTENT_REPO_URL", "EVENT_PROVIDER",
+                         "EVENT_NAME", "LUMA_SESSION_KEY", "LUMA_CLIENT_VERSION"):
+                _val = _os.getenv(_key, "").strip()
+                if _val:
+                    setattr(config, _key, _val)
+            logger.info("Loaded instance .env from %s", env_path)
+
     if args.no_camera and args.head_tracker is not None:
         logger.warning(
             "Head tracking disabled: --no-camera flag is set. "
