@@ -52,11 +52,11 @@ class VectorStore:
                 must=[FieldCondition(key="category", match=MatchValue(value=category))]
             )
 
-        results = self._client.search(
+        response = self._client.query_points(
             collection_name=COLLECTION_NAME,
-            query_vector=query_vector,
+            query=query_vector,
             query_filter=query_filter,
             limit=limit,
             with_payload=True,
         )
-        return [{"text": r.payload["text"], "source": r.payload["source_file"], "score": r.score} for r in results]
+        return [{"text": r.payload["text"], "source": r.payload["source_file"], "score": r.score} for r in response.points]
