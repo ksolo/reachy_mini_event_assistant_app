@@ -11,11 +11,16 @@ Mount with a single call alongside mount_personality_routes():
     mount_event_config_routes(app, instance_path=self._instance_path)
 """
 
-from __future__ import annotations
-
 import logging
 import os
 from pathlib import Path
+
+try:
+    from fastapi import FastAPI, Request
+    from fastapi.responses import JSONResponse
+    _FASTAPI_AVAILABLE = True
+except ImportError:  # pragma: no cover
+    _FASTAPI_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -90,12 +95,7 @@ def mount_event_config_routes(
         GET  /event_config  — returns current values (LUMA_SESSION_KEY masked)
         POST /event_config  — saves any subset of the 5 event config keys
     """
-    try:
-        from fastapi import FastAPI, Request
-        from fastapi.responses import JSONResponse
-        if not isinstance(app, FastAPI):
-            return
-    except Exception:
+    if not _FASTAPI_AVAILABLE or not isinstance(app, FastAPI):
         return
 
     @app.get("/event_config")
