@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Reachy Mini Event Assistant App – Settings</title>
+    <title>Reachy Mini Event Assistant – Settings</title>
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
@@ -12,13 +12,15 @@
       <div class="spinner"></div>
       <p>Loading…</p>
     </div>
+
     <div class="container">
       <header class="hero">
         <div class="pill">Headless control</div>
-        <h1>Reachy Mini Event Assistant App</h1>
-        <p class="subtitle">Configure your event assistant app settings.</p>
+        <h1>Reachy Mini Event Assistant</h1>
+        <p class="subtitle">Configure your robot for the event.</p>
       </header>
 
+      <!-- OpenAI key — configured state -->
       <div id="configured" class="panel hidden">
         <div class="panel-heading">
           <div>
@@ -27,10 +29,11 @@
           </div>
           <span class="chip chip-ok">Connected</span>
         </div>
-        <p class="muted">OpenAI API key is configured. The conversation app is ready to use.</p>
+        <p class="muted">OpenAI API key is configured. The assistant is ready.</p>
         <button id="change-key-btn" class="ghost">Change API key</button>
       </div>
 
+      <!-- OpenAI key — entry form -->
       <div id="form-panel" class="panel hidden">
         <div class="panel-heading">
           <div>
@@ -39,7 +42,7 @@
           </div>
           <span class="chip">Required</span>
         </div>
-        <p class="muted">Paste your API key once and we will store it locally for the conversation loop.</p>
+        <p class="muted">Paste your API key once and it will be stored locally for the voice loop.</p>
         <label for="api-key">OpenAI API Key</label>
         <input id="api-key" type="password" placeholder="sk-..." autocomplete="off" />
         <div class="actions">
@@ -47,30 +50,33 @@
           <p id="status" class="status"></p>
         </div>
       </div>
-    </div>
 
+      <!-- Event config -->
       <div id="event-config-panel" class="panel hidden">
         <div class="panel-heading">
           <div>
-            <p class="eyebrow">Event Configuration</p>
-            <h2>Event Settings</h2>
+            <p class="eyebrow">Event</p>
+            <h2>Event settings</h2>
           </div>
         </div>
-        <p class="muted">Configure the event details and Luma check-in credentials. The Luma session key expires often — paste a fresh one here whenever check-in stops working.</p>
 
-        <label for="content-repo-url">Content Repo URL</label>
-        <input id="content-repo-url" type="text" placeholder="https://github.com/you/your-event-content" autocomplete="off" />
-
-        <label for="event-provider">Event Provider</label>
-        <input id="event-provider" type="text" placeholder="luma" autocomplete="off" />
-
-        <label for="event-name">Event Name</label>
+        <p class="eyebrow" style="margin-top:12px;">Basics</p>
+        <label for="event-name">Event name</label>
         <input id="event-name" type="text" placeholder="the event" autocomplete="off" />
 
-        <label for="luma-session-key">Luma Session Key</label>
+        <label for="event-provider">Provider</label>
+        <input id="event-provider" type="text" placeholder="luma" autocomplete="off" />
+
+        <label for="content-repo-url">Content repo URL</label>
+        <input id="content-repo-url" type="text" placeholder="https://github.com/you/your-event-content" autocomplete="off" />
+
+        <p class="eyebrow" style="margin-top:20px;">Luma credentials</p>
+        <p class="muted" style="margin:4px 0 8px;font-size:12px;">The session key expires when Luma deploys — paste a fresh one from browser devtools whenever check-in stops working.</p>
+
+        <label for="luma-session-key">Session key</label>
         <input id="luma-session-key" type="password" placeholder="Paste fresh key from browser devtools" autocomplete="off" />
 
-        <label for="luma-client-version">Luma Client Version</label>
+        <label for="luma-client-version">Client version</label>
         <input id="luma-client-version" type="text" placeholder="cf825565f986a8aa6e037d0ab12f2d4d7144b79a" autocomplete="off" />
 
         <div class="actions">
@@ -78,6 +84,8 @@
           <p id="event-status" class="status"></p>
         </div>
       </div>
+
+    </div><!-- /.container -->
 
     <script src="/static/main.js"></script>
   </body>

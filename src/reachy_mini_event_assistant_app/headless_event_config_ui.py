@@ -16,7 +16,6 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +82,7 @@ def _update_config(key: str, value: str) -> None:
 def mount_event_config_routes(
     app: object,
     *,
-    instance_path: Optional[str],
+    instance_path: str | None,
 ) -> None:
     """Register event config endpoints on a FastAPI app.
 
@@ -92,20 +91,12 @@ def mount_event_config_routes(
         POST /event_config  — saves any subset of the 5 event config keys
     """
     try:
-        from fastapi import FastAPI
+        from fastapi import FastAPI, Request
         from fastapi.responses import JSONResponse
-        from pydantic import BaseModel
         if not isinstance(app, FastAPI):
             return
     except Exception:
         return
-
-    class EventConfigPayload(BaseModel):
-        content_repo_url: Optional[str] = None
-        event_provider: Optional[str] = None
-        event_name: Optional[str] = None
-        luma_session_key: Optional[str] = None
-        luma_client_version: Optional[str] = None
 
     @app.get("/event_config")
     def _get_event_config() -> JSONResponse:
@@ -123,20 +114,26 @@ def mount_event_config_routes(
             return JSONResponse({"error": "config_unavailable"}, status_code=500)
 
     @app.post("/event_config")
-    def _post_event_config(payload: EventConfigPayload) -> JSONResponse:
-        mapping = {
-            "CONTENT_REPO_URL": payload.content_repo_url,
-            "EVENT_PROVIDER": payload.event_provider,
-            "EVENT_NAME": payload.event_name,
-            "LUMA_SESSION_KEY": payload.luma_session_key,
-            "LUMA_CLIENT_VERSION": payload.luma_client_version,
+    async def _post_event_config(request: Request) -> JSONResponse:
+        # Accept raw JSON to avoid Pydantic validation-related 422s (same pattern as personality routes)
+        try:
+            raw = await request.json()
+        except Exception:
+            raw = {}
+
+        field_map = {
+            "content_repo_url": "CONTENT_REPO_URL",
+            "event_provider": "EVENT_PROVIDER",
+            "event_name": "EVENT_NAME",
+            "luma_session_key": "LUMA_SESSION_KEY",
+            "luma_client_version": "LUMA_CLIENT_VERSION",
         }
         updated = []
-        for env_key, value in mapping.items():
-            if value is None:
+        for json_key, env_key in field_map.items():
+            if json_key not in raw:
                 # Not included in payload — leave existing value alone
                 continue
-            v = value.strip()
+            v = str(raw[json_key]).strip() if raw[json_key] is not None else ""
             if env_key == "LUMA_SESSION_KEY" and not v:
                 # Empty password field means "keep existing" — skip
                 continue
