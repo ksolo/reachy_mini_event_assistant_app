@@ -45,7 +45,7 @@ class EventQA(Tool):
 
         try:
             query_vector = deps.embeddings.embed_one(query)
-            results = deps.vector_store.search(query_vector, category=category, limit=5)
+            results = deps.vector_store.search(query_vector, category=category, limit=3)
 
             if not results:
                 return {"answer": "I don't have specific information about that. Please ask an organizer."}
