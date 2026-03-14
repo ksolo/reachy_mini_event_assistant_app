@@ -49,7 +49,9 @@ class LumaProvider(EventProvider):
         session_key = config.LUMA_SESSION_KEY or self._session_key
         client_version = config.LUMA_CLIENT_VERSION or self._client_version
 
+        logger.info("Raw QR data: %r", qr_data)
         event_api_id, rsvp_api_id = self._parse_qr(qr_data)
+        logger.info("Parsed QR — event_api_id=%r  rsvp_api_id=%r", event_api_id, rsvp_api_id)
         if not event_api_id or not rsvp_api_id:
             return CheckinResult(
                 success=False,
@@ -57,26 +59,36 @@ class LumaProvider(EventProvider):
                 message="I couldn't read that QR code. Could you try again?",
             )
 
+        payload = {
+            "event_api_id": event_api_id,
+            "check_in_method": "guest-list",
+            "check_in_status": "checked-in",
+            "type": "guest",
+            "rsvp_api_id": rsvp_api_id,
+        }
+        request_headers = {
+            "accept": "*/*",
+            "content-type": "application/json",
+            "x-luma-client-type": "luma-web",
+            "x-luma-client-version": client_version,
+            "x-luma-web-url": f"{_LUMA_CHECK_IN_BASE_URL}/{event_api_id}",
+        }
+        logger.info(
+            "POST %s  payload=%r  headers=%r  session_key_set=%s",
+            _CHECKIN_ENDPOINT,
+            payload,
+            request_headers,
+            bool(session_key),
+        )
         try:
             resp = requests.post(
                 _CHECKIN_ENDPOINT,
-                json={
-                    "event_api_id": event_api_id,
-                    "check_in_method": "guest-list",
-                    "check_in_status": "checked-in",
-                    "type": "guest",
-                    "rsvp_api_id": rsvp_api_id,
-                },
-                headers={
-                    "accept": "*/*",
-                    "content-type": "application/json",
-                    "x-luma-client-type": "luma-web",
-                    "x-luma-client-version": client_version,
-                    "x-luma-web-url": f"{_LUMA_CHECK_IN_BASE_URL}/{event_api_id}",
-                },
+                json=payload,
+                headers=request_headers,
                 cookies={"luma.auth-session-key": session_key},
                 timeout=10,
             )
+            logger.info("Response status: %s  body: %r", resp.status_code, resp.text[:500])
             resp.raise_for_status()
             data = resp.json()
             guest = data.get("guest", {})
@@ -88,7 +100,8 @@ class LumaProvider(EventProvider):
                 message=f"You're checked in{name_str}! Enjoy the event!",
             )
         except requests.HTTPError as e:
-            logger.warning("Luma check-in HTTP error: %s", e)
+            body = e.response.text[:500] if e.response is not None else ""
+            logger.warning("Luma check-in HTTP error: %s  response_body=%r", e, body)
             if e.response is not None and e.response.status_code == 404:
                 return CheckinResult(
                     success=False,
