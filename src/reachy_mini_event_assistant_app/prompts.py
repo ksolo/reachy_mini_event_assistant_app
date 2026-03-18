@@ -81,6 +81,8 @@ def get_session_instructions() -> str:
             if instructions:
                 # Expand [<name>] placeholders with content from prompts library
                 expanded_instructions = _expand_prompt_includes(instructions)
+                # Substitute runtime config variables
+                expanded_instructions = expanded_instructions.replace("{event_name}", config.EVENT_NAME)
                 return expanded_instructions
             logger.error(f"Profile '{profile}' has empty {INSTRUCTIONS_FILENAME}")
             sys.exit(1)
