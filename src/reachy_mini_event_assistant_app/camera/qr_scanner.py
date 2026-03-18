@@ -20,10 +20,16 @@ def scan_qr_from_frame(frame: NDArray[np.uint8]) -> str | None:
     """Decode the first QR code found in an OpenCV BGR frame.
 
     Returns the decoded string payload, or None if no QR code found.
+    Tries color frame first, then grayscale for better detection.
     """
     try:
         data, _, _ = _detector.detectAndDecode(frame)
+        if data:
+            return data
+        # Retry with grayscale — often improves detection reliability
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        data, _, _ = _detector.detectAndDecode(gray)
         return data if data else None
     except Exception:
-        logger.debug("QR decode error", exc_info=True)
+        logger.warning("QR decode error", exc_info=True)
     return None
