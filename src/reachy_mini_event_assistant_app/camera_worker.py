@@ -99,7 +99,24 @@ class CameraWorker:
 
         Ported from main_works.py camera_worker() with same logic.
         """
-        logger.debug("Starting camera working loop")
+        backend = getattr(getattr(self.reachy_mini, "media", None), "backend", "unknown")
+        camera = getattr(getattr(self.reachy_mini, "media", None), "camera", None)
+        logger.info("Camera worker starting — media backend=%s, camera initialized=%s", backend, camera is not None)
+
+        # Give the GStreamer pipeline time to start delivering frames before
+        # the first poll. The SDK has a known startup delay (see TODO in camera_gstreamer.open()).
+        _warmup_deadline = time.time() + 3.0
+        while time.time() < _warmup_deadline and not self._stop_event.is_set():
+            frame = self.reachy_mini.media.get_frame()
+            if frame is not None:
+                logger.info("Camera pipeline ready after %.1fs", 3.0 - (_warmup_deadline - time.time()))
+                with self.frame_lock:
+                    self.latest_frame = frame
+                break
+            time.sleep(0.1)
+        else:
+            if self.latest_frame is None:
+                logger.warning("Camera pipeline did not deliver a frame within 3s — check media backend and camera socket")
 
         # Initialize head tracker if available
         neutral_pose = np.eye(4)  # Neutral pose (identity matrix)

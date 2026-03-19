@@ -46,11 +46,14 @@ class CheckinGuest(Tool):
         deps.movement_manager.clear_move_queue()
         logger.info("Movement queue cleared; looking down for QR scan")
 
-        # Orient the head downward toward where a guest would hold their phone
+        # Orient the head downward toward where a guest would hold their phone,
+        # then hold that position for the full scan window so the BreathingMove
+        # (idle_inactivity_delay = 0.3s) doesn't pull the head back to neutral.
         try:
             target_pose = create_head_pose(0, 0, 0, 0, QR_LOOK_PITCH_DEG, 0, degrees=True)
             current_head_pose = deps.reachy_mini.get_current_head_pose()
             _, current_antennas = deps.reachy_mini.get_current_joint_positions()
+            # Move 1: look down (reaches target in QR_LOOK_DURATION_S)
             look_down = GotoQueueMove(
                 target_head_pose=target_pose,
                 start_head_pose=current_head_pose,
@@ -60,12 +63,24 @@ class CheckinGuest(Tool):
                 start_body_yaw=current_antennas[0],
                 duration=QR_LOOK_DURATION_S,
             )
+            # Move 2: hold the look-down pose for the full scan window so
+            # the BreathingMove cannot kick in and return the head to neutral.
+            hold_down = GotoQueueMove(
+                target_head_pose=target_pose,
+                start_head_pose=target_pose,
+                target_antennas=(0, 0),
+                start_antennas=(0, 0),
+                target_body_yaw=0,
+                start_body_yaw=0,
+                duration=QR_SCAN_TIMEOUT_S + 2.0,
+            )
             deps.movement_manager.queue_move(look_down)
-            deps.movement_manager.set_moving_state(QR_LOOK_DURATION_S)
+            deps.movement_manager.queue_move(hold_down)
+            deps.movement_manager.set_moving_state(QR_LOOK_DURATION_S + QR_SCAN_TIMEOUT_S + 2.0)
         except Exception:
             logger.warning("Could not queue look-down move; continuing with current head position", exc_info=True)
 
-        # Wait for look-down to complete then settle
+        # Wait for look-down to complete then settle before scanning
         await asyncio.sleep(QR_LOOK_DURATION_S + QR_SETTLE_DELAY_S)
 
         logger.info("Starting QR scan (timeout=%.1fs)", QR_SCAN_TIMEOUT_S)
